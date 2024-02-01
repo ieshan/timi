@@ -254,7 +254,7 @@ func TestPostgres(t *testing.T) {
 		id integer NOT NULL,
 		time1 timestamptz NOT NULL,
 		time2 timestamptz DEFAULT NULL,
-		CONSTRAINT crud_test_data_id PRIMARY KEY (id)
+		CONSTRAINT timi_test_id PRIMARY KEY (id)
 	) WITH (oids = false);
 	`
 	if err = db.Exec(table).Error; err != nil {

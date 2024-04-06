@@ -3,7 +3,7 @@ services:
   exec-test:
     build:
       context: .
-    image: timi:0.0.1
+    image: timi:1.1.3
     volumes:
       - "./:/app"
     networks:

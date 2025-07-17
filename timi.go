@@ -3,8 +3,6 @@ package timi
 import (
 	"database/sql"
 	"database/sql/driver"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"time"
 )
 
@@ -258,27 +256,6 @@ func (t *Time) UnmarshalText(data []byte) error {
 		return err
 	}
 	t.Time = t.Time.UTC()
-	return nil
-}
-
-func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	if !t.Valid {
-		return bsontype.Type('\x0A'), nil, nil
-	}
-	return bson.MarshalValue(t.Time)
-}
-
-func (t *Time) UnmarshalBSONValue(bType bsontype.Type, data []byte) error {
-	if data == nil {
-		t.Time, t.Valid = time.Time{}, false
-		return nil
-	}
-	var tv time.Time
-	if err := bson.UnmarshalValue(bType, data, &tv); err != nil {
-		return err
-	}
-	t.Time = tv.UTC()
-	t.Valid = true
 	return nil
 }
 

@@ -1,10 +1,10 @@
 module github.com/ieshan/timi/mongodb
 
-go 1.25
+go 1.26
 
 require (
 	github.com/ieshan/timi v0.0.0
-	go.mongodb.org/mongo-driver/v2 v2.3.0
+	go.mongodb.org/mongo-driver/v2 v2.7.0
 )
 
 // Use local timi package

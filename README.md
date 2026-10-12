@@ -27,6 +27,7 @@ timi/
 ├── integration-tests/          # Database integration testing workspace
 │   ├── go.mod                  # Integration dependencies isolated here
 │   ├── timi_mongo_test.go     # MongoDB integration tests
+│   ├── timi_sqlite_test.go    # SQLite string scan tests (database/sql + mattn/go-sqlite3)
 │   └── timi_gorm_test.go      # SQL database tests (MariaDB, PostgreSQL, SQLite)
 ├── mongodb/                    # MongoDB utilities workspace
 │   ├── go.mod                  # MongoDB driver dependencies
@@ -45,7 +46,7 @@ go get github.com/ieshan/timi
 
 ### **Zero Dependencies Core**
 - ✅ JSON marshaling/unmarshaling
-- ✅ SQL database support via `database/sql`  
+- ✅ SQL database support via `database/sql` (accepts `time.Time`, `nil`, `string`, and `[]byte` — incl. SQLite TEXT columns)  
 - ✅ Time manipulation methods (After, Before, Add, etc.)
 - ✅ UTC timezone enforcement
 - ✅ Null value handling
@@ -134,6 +135,10 @@ func main() {
         name, startTime.String(), endTime.IsNull())
 }
 ```
+
+`timi.Time.Scan` accepts `time.Time`, `nil`, `string`, and `[]byte` driver values. String values are parsed as RFC3339/RFC3339Nano or the SQLite timestamp formats (`YYYY-MM-DD HH:MM:SS[.fraction][Z|±hh:mm]`, `YYYY-MM-DD HH:MM`, `YYYY-MM-DD`) and are always normalized to UTC. This covers SQLite `TEXT` columns and bare datetime expressions like `datetime('now')`, and also fixes MySQL drivers running with `parseTime=false` (which return `[]byte`).
+
+SQLite INTEGER (unixepoch) and REAL (Julian day) storage are **not** supported — `Scan` returns an error rather than guessing units. Store datetimes as ISO8601 strings, as SQLite recommends.
 
 ### **MongoDB BSON Support (mongodb/ workspace)**
 
@@ -261,6 +266,7 @@ cd mongodb && go test -v
   - PostgreSQL with timezone support
   - SQLite with nanosecond precision
   - CRUD operations, queries, edge cases
+  - `timi_sqlite_test.go`: direct `database/sql` coverage of TEXT-column and expression string scans, NULL/empty handling, and numeric rejection
 
 - **MongoDB** (`timi_mongo_test.go`):
   - BSON marshaling/unmarshaling
@@ -402,6 +408,7 @@ var NilTime = Time{Time: time.Time{}, Valid: false}
 ```go
 func Now() Time
 func Date(year int, month time.Month, day, hour, min, sec, nsec int, loc *time.Location) Time
+func ParseTime(s string) (Time, error) // accepts the same string formats as Scan
 ```
 
 ### **Key Methods**
@@ -452,7 +459,7 @@ func (t Time) MarshalText() ([]byte, error)
 func (t *Time) UnmarshalText(data []byte) error
 
 // SQL support
-func (t *Time) Scan(value interface{}) error
+func (t *Time) Scan(value interface{}) error // accepts time.Time, nil, string, []byte
 func (t Time) Value() (driver.Value, error)
 ```
 

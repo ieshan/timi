@@ -3,6 +3,7 @@ package timi
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"time"
 )
 
@@ -208,7 +209,44 @@ func (t Time) UnixNano() int64 {
 	return t.Time.UnixNano()
 }
 
+// timeScanLayouts lists the string formats accepted by Scan. It covers
+// RFC3339 plus the timestamp formats used by SQLite drivers (mirroring
+// mattn/go-sqlite3's SQLiteTimestampFormats).
+var timeScanLayouts = []string{
+	time.RFC3339Nano,
+	"2006-01-02 15:04:05.999999999Z07:00",
+	"2006-01-02T15:04:05.999999999Z07:00",
+	"2006-01-02 15:04:05.999999999",
+	"2006-01-02T15:04:05.999999999",
+	"2006-01-02 15:04",
+	"2006-01-02T15:04",
+	"2006-01-02",
+}
+
+func parseTimeString(s string) (time.Time, error) {
+	for _, layout := range timeScanLayouts {
+		if parsed, err := time.Parse(layout, s); err == nil {
+			return parsed, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("timi: cannot parse %q as time", s)
+}
+
 func (t *Time) Scan(value interface{}) (err error) {
+	switch v := value.(type) {
+	case string:
+		if v == "" {
+			value = nil
+		} else {
+			parsed, perr := parseTimeString(v)
+			if perr != nil {
+				return perr
+			}
+			value = parsed
+		}
+	case []byte:
+		return t.Scan(string(v))
+	}
 	if err = (*sql.NullTime)(t).Scan(value); err != nil {
 		return err
 	}
@@ -265,4 +303,13 @@ func Now() Time {
 
 func Date(year int, month time.Month, day, hour, min, sec, nsec int, loc *time.Location) Time {
 	return Time{Time: time.Date(year, month, day, hour, min, sec, nsec, loc).UTC(), Valid: true}
+}
+
+// ParseTime parses a time string in any of the formats accepted by Scan.
+func ParseTime(s string) (Time, error) {
+	parsed, err := parseTimeString(s)
+	if err != nil {
+		return NilTime, err
+	}
+	return Time{Time: parsed.UTC(), Valid: true}, nil
 }

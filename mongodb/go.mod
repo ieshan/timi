@@ -1,6 +1,6 @@
 module github.com/ieshan/timi/mongodb
 
-go 1.26
+go 1.27
 
 require (
 	github.com/ieshan/timi v0.0.0

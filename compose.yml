@@ -1,6 +1,6 @@
 services:
   test:
-    image: golang:1.26.4-trixie
+    image: golang:1.27.2-trixie
     working_dir: /app
     volumes:
       - "./:/app"
@@ -16,21 +16,21 @@ services:
       - "rm -f go.work go.work.sum && go work init . ./integration-tests ./mongodb && go mod download && go test -v ./..."
     stop_signal: SIGINT
   postgres:
-    image: postgres:18.4-alpine3.24
+    image: postgres:18.6-alpine3.24
     restart: always
     environment:
       POSTGRES_PASSWORD: password
     networks:
       - timi-network
   mariadb:
-    image: mariadb:12.3.2-ubi1o
+    image: mariadb:13.0.2-ubi10
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: password
     networks:
       - timi-network
   mongo:
-    image: mongo:8.3.4-noble
+    image: mongo:9.0.2-noble
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
